@@ -1,0 +1,263 @@
+import java.util.ArrayList;
+import java.util.Scanner;
+import java.text.DecimalFormat;
+import java.util.Random;
+
+public class Stock_Trading_Platform {
+	
+	
+    private ArrayList<StockItem> availableStocks;
+    private TraderPortfolio portfolio;
+    private Scanner input;
+    private Random random;
+    private DecimalFormat df;
+    
+    
+    // Stocks class to hold stock information
+    private class StockItem {
+        private String symbol;
+        private String name;
+        private double price;
+        private double dayChange;
+        
+        
+        
+        public StockItem(String symbol, String name, double price) {
+            this.symbol = symbol;
+            this.name = name;
+            this.price = price;
+            this.dayChange = 0.0;
+        }
+        
+        
+        
+        public void updatePrice() {
+            // Simulate market movement
+            double change = (random.nextDouble() * 2 - 1) * 5; // -5% to +5%
+            price += (price * change / 100);
+            dayChange = change;
+        }
+    }
+    
+    
+    
+    
+    // Portfolio management class
+    private class TraderPortfolio {
+        private ArrayList<String> symbols;
+        private ArrayList<Integer> quantities;
+        private double cash;
+        
+        public TraderPortfolio(double initialCash) {
+            symbols = new ArrayList<>();
+            quantities = new ArrayList<>();
+            cash = initialCash;
+        }
+        
+        
+        
+        
+        public void buyShares(String symbol, int quantity, double price) {
+            double cost = quantity * price;
+            if (cost > cash) {
+                System.out.println("Error: Insufficient funds!");
+                return;
+            }
+            
+            int index = symbols.indexOf(symbol);
+            if (index == -1) {
+                symbols.add(symbol);
+                quantities.add(quantity);
+            } else {
+                quantities.set(index, quantities.get(index) + quantity);
+            }
+            
+            cash -= cost;
+            System.out.println("Purchase successful!");
+        }
+        
+        
+        
+        
+        public void sellShares(String symbol, int quantity, double price) {
+            int index = symbols.indexOf(symbol);
+            if (index == -1 || quantities.get(index) < quantity) {
+                System.out.println("Error: Not enough shares to sell!");
+                return;
+            }
+            
+            int newQuantity = quantities.get(index) - quantity;
+            if (newQuantity == 0) {
+                symbols.remove(index);
+                quantities.remove(index);
+            } else {
+                quantities.set(index, newQuantity);
+            }
+            
+            cash += quantity * price;
+            System.out.println("Sale successful!");
+        }
+    }
+    
+    
+    
+    
+    public Stock_Trading_Platform() {
+        availableStocks = new ArrayList<>();
+        portfolio = new TraderPortfolio(10000.0); // Start with $10,000
+        input = new Scanner(System.in);
+        random = new Random();
+        df = new DecimalFormat("#.##");
+        
+        // Initialising some stocks
+        initializeMarket();
+    }
+    
+    
+    
+    
+    private void initializeMarket() {
+        availableStocks.add(new StockItem("AAPL", "Apple Inc.", 175.50));
+        availableStocks.add(new StockItem("MSFT", "Microsoft Corp.", 285.30));
+        availableStocks.add(new StockItem("GOOGL", "Alphabet Inc.", 2750.00));
+        availableStocks.add(new StockItem("AMZN", "Amazon.com", 3300.00));
+        availableStocks.add(new StockItem("TSLA", "Tesla Inc.", 850.75));
+    }
+    
+    
+    
+    
+    
+    private void showMarketData() {
+        System.out.println("\nCurrent Market Data");
+        System.out.println("------------------");
+        System.out.printf("%-8s %-15s %-10s %s%n", "Symbol", "Company", "Price", "Change");
+        
+        for (StockItem stock : availableStocks) {
+            stock.updatePrice(); // Simulate price movement
+            System.out.printf("%-8s %-15s $%-9s %s%%%n",
+                stock.symbol,
+                stock.name,
+                df.format(stock.price),
+                df.format(stock.dayChange));
+        }
+    }
+    
+    
+    
+    
+    private void executeTrade(boolean isBuying) {
+        System.out.print("Enter stock symbol: ");
+        String symbol = input.next().toUpperCase();
+        
+        StockItem stock = null;
+        for (StockItem s : availableStocks) {
+            if (s.symbol.equals(symbol)) {
+                stock = s;
+                break;
+            }
+        }
+        
+        if (stock == null) {
+            System.out.println("Invalid stock symbol!");
+            return;
+        }
+        
+        System.out.print("Enter number of shares: ");
+        int shares = input.nextInt();
+        
+        if (shares <= 0) {
+            System.out.println("Invalid quantity!");
+            return;
+        }
+        
+        if (isBuying) {
+            portfolio.buyShares(symbol, shares, stock.price);
+        } else {
+            portfolio.sellShares(symbol, shares, stock.price);
+        }
+    }
+    
+    
+    
+    
+    private void displayPortfolio() {
+        System.out.println("\nYour Portfolio");
+        System.out.println("-------------");
+        System.out.println("Cash Balance: $" + df.format(portfolio.cash));
+        
+        if (portfolio.symbols.isEmpty()) {
+            System.out.println("No stocks owned.");
+            return;
+        }
+        
+        double totalValue = portfolio.cash;
+        System.out.printf("%-8s %-8s %-10s %s%n", "Symbol", "Shares", "Price", "Value");
+        
+        for (int i = 0; i < portfolio.symbols.size(); i++) {
+            String symbol = portfolio.symbols.get(i);
+            int quantity = portfolio.quantities.get(i);
+            
+            for (StockItem stock : availableStocks) {
+                if (stock.symbol.equals(symbol)) {
+                    double value = quantity * stock.price;
+                    totalValue += value;
+                    System.out.printf("%-8s %-8d $%-9s $%s%n",
+                        symbol,
+                        quantity,
+                        df.format(stock.price),
+                        df.format(value));
+                    break;
+                }
+            }
+        }
+        
+        System.out.println("\nTotal Portfolio Value: $" + df.format(totalValue));
+    }
+    
+    
+    
+    
+    public void startTrading() {
+        while (true) {
+            System.out.println("\nTrading System Menu");
+            System.out.println("------------------");
+            System.out.println("1. View Market Data");
+            System.out.println("2. Buy Stocks");
+            System.out.println("3. Sell Stocks");
+            System.out.println("4. View Portfolio");
+            System.out.println("5. Exit");
+            System.out.print("\nSelect option: ");
+            
+            int choice = input.nextInt();
+            
+            switch (choice) {
+                case 1:
+                    showMarketData();
+                    break;
+                case 2:
+                    executeTrade(true);
+                    break;
+                case 3:
+                    executeTrade(false);
+                    break;
+                case 4:
+                    displayPortfolio();
+                    break;
+                case 5:
+                    System.out.println("Thank you for trading!");
+                    input.close();
+                    return;
+                default:
+                    System.out.println("Invalid option!");
+            }
+        }
+    }
+    
+    
+    
+    public static void main(String[] args) {
+    	Stock_Trading_Platform system = new Stock_Trading_Platform();
+        system.startTrading();
+    }
+}
