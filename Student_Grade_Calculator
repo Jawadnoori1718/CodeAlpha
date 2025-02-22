@@ -1,0 +1,203 @@
+import java.util.ArrayList;
+import java.util.Scanner;
+
+public class Student_Grade_Calculator {
+
+ 
+    // Storing students data using ArrayLists
+    private ArrayList<String> studentNames;
+    private ArrayList<ArrayList<Integer>> studentGrades;
+    private Scanner scan;
+
+
+    
+    public Student_Grade_Calculator() {
+        studentNames = new ArrayList<>();
+        studentGrades = new ArrayList<>();
+        scan = new Scanner(System.in);
+    }
+
+
+    
+    private void displayMenu() {
+        System.out.println("\nGrade Book Menu");
+        System.out.println("--------------");
+        System.out.println("1) Add student");
+        System.out.println("2) Record grades");
+        System.out.println("3) Display student grades");
+        System.out.println("4) Show class stats");
+        System.out.println("5) Exit");
+        System.out.print("Choose an option: ");
+    }
+
+
+    
+    private void addStudent() {
+        System.out.print("Enter student name: ");
+        scan.nextLine(); // Clear buffer
+        String name = scan.nextLine();
+        
+        // Check if student already exists
+        if (studentNames.contains(name)) {
+            System.out.println("Student already exists!");
+            return;
+        }
+        
+        studentNames.add(name);
+        studentGrades.add(new ArrayList<>());
+        System.out.println("Added " + name + " to grade book.");
+    }
+
+
+    
+    private void recordGrades() {
+        if (studentNames.isEmpty()) {
+            System.out.println("No students registered!");
+            return;
+        }
+        
+        System.out.print("Student name: ");
+        scan.nextLine();
+        String name = scan.nextLine();
+        
+        int studentIndex = studentNames.indexOf(name);
+        if (studentIndex == -1) {
+            System.out.println("Student not found!");
+            return;
+        }
+        
+        ArrayList<Integer> grades = studentGrades.get(studentIndex);
+        System.out.println("Enter grades (enter -1 to finish)");
+        
+        int grade;
+        while (true) {
+            System.out.print("Grade: ");
+            grade = scan.nextInt();
+            
+            if (grade == -1) {
+                break;
+            }
+            
+            if (grade >= 0 && grade <= 100) {
+                grades.add(grade);
+            } else {
+                System.out.println("Invalid grade! Use 0-100.");
+            }
+        }
+    }
+    
+
+    
+    private void displayStudentGrades() {
+        System.out.print("Enter student name: ");
+        scan.nextLine();
+        String name = scan.nextLine();
+        
+        int index = studentNames.indexOf(name);
+        if (index == -1) {
+            System.out.println("Student not found!");
+            return;
+        }
+        
+        ArrayList<Integer> grades = studentGrades.get(index);
+        if (grades.isEmpty()) {
+            System.out.println(name + " has no grades recorded.");
+            return;
+        }
+        
+        // Calculate statistics
+        int sum = 0;
+        int highest = grades.get(0);
+        int lowest = grades.get(0);
+        
+        for (int grade : grades) {
+            sum += grade;
+            if (grade > highest) highest = grade;
+            if (grade < lowest) lowest = grade;
+        }
+        
+        double average = (double) sum / grades.size();
+        
+        // Displaying results
+        System.out.println("\nGrades for " + name + ":");
+        System.out.println("All grades: " + grades);
+        System.out.printf("Average: %.2f\n", average);
+        System.out.println("Highest: " + highest);
+        System.out.println("Lowest: " + lowest);
+    }
+    
+    
+    
+    private void showClassStats() {
+        if (studentNames.isEmpty()) {
+            System.out.println("No students in grade book!");
+            return;
+        }
+        
+        int totalGrades = 0;
+        int sumAll = 0;
+        int highestOverall = Integer.MIN_VALUE;
+        int lowestOverall = Integer.MAX_VALUE;
+        
+        for (ArrayList<Integer> grades : studentGrades) {
+            for (int grade : grades) {
+                sumAll += grade;
+                totalGrades++;
+                if (grade > highestOverall) highestOverall = grade;
+                if (grade < lowestOverall) lowestOverall = grade;
+            }
+        }
+        
+        if (totalGrades == 0) {
+            System.out.println("No grades recorded yet!");
+            return;
+        }
+        
+        System.out.println("\nClass Statistics");
+        System.out.println("---------------");
+        System.out.printf("Class Average: %.2f\n", (double) sumAll / totalGrades);
+        System.out.println("Highest Grade: " + highestOverall);
+        System.out.println("Lowest Grade: " + lowestOverall);
+        System.out.println("Total Students: " + studentNames.size());
+        System.out.println("Total Grades: " + totalGrades);
+    }
+
+    
+    
+    public void start() {
+        int choice;
+        do {
+            displayMenu();
+            choice = scan.nextInt();
+            
+            switch (choice) {
+                case 1:
+                    addStudent();
+                    break;
+                case 2:
+                    recordGrades();
+                    break;
+                case 3:
+                    displayStudentGrades();
+                    break;
+                case 4:
+                    showClassStats();
+                    break;
+                case 5:
+                    System.out.println("Goodbye!");
+                    break;
+                default:
+                    System.out.println("Invalid option!");
+            }
+        } while (choice != 5);
+        
+        scan.close();
+    }
+
+
+
+    public static void main(String[] args) {
+    	Student_Grade_Calculator gradeBook = new Student_Grade_Calculator();
+        gradeBook.start();
+    }
+}
