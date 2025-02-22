@@ -1,0 +1,293 @@
+import java.util.ArrayList;
+import java.util.Scanner;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
+
+public class Hotel_Reservation_System {
+	
+	
+	
+    private ArrayList<HotelRoom> inventory;
+    private ArrayList<Reservation> bookings;
+    private Scanner scanner;
+    private double taxRate;
+    
+    
+    
+    
+    // Inner class for room details
+    private class HotelRoom {
+        private String roomNumber;
+        private String category;
+        private double baseRate;
+        private boolean isAvailable;
+        private String[] amenities;
+        
+        
+        
+        
+        public HotelRoom(String roomNumber, String category, double baseRate, String[] amenities) {
+            this.roomNumber = roomNumber;
+            this.category = category;
+            this.baseRate = baseRate;
+            this.amenities = amenities;
+            this.isAvailable = true;
+        }
+    }
+    
+    
+    
+    // Inner class for reservation management
+    private class Reservation {
+        private String bookingId;
+        private String guestName;
+        private HotelRoom room;
+        private LocalDate checkIn;
+        private LocalDate checkOut;
+        private double totalCost;
+        private boolean isPaid;
+        
+        
+        
+        
+        public Reservation(String guestName, HotelRoom room, LocalDate checkIn, LocalDate checkOut) {
+            this.bookingId = generateBookingId();
+            this.guestName = guestName;
+            this.room = room;
+            this.checkIn = checkIn;
+            this.checkOut = checkOut;
+            this.totalCost = calculateTotalCost();
+            this.isPaid = false;
+        }
+        
+        
+        
+        
+        private String generateBookingId() {
+            return "BK" + System.currentTimeMillis() % 10000;
+        }
+        
+        
+        
+        
+        private double calculateTotalCost() {
+            long nights = ChronoUnit.DAYS.between(checkIn, checkOut);
+            double baseCost = room.baseRate * nights;
+            return baseCost * (1 + taxRate);
+        }
+        
+        
+        
+        
+        public void displayReservation() {
+            System.out.println("\n=== Reservation Details ===");
+            System.out.println("Booking ID: " + bookingId);
+            System.out.println("Guest: " + guestName);
+            System.out.println("Room: " + room.roomNumber + " (" + room.category + ")");
+            System.out.println("Check-in: " + checkIn.format(DateTimeFormatter.ISO_LOCAL_DATE));
+            System.out.println("Check-out: " + checkOut.format(DateTimeFormatter.ISO_LOCAL_DATE));
+            System.out.printf("Total Cost: $%.2f%n", totalCost);
+            System.out.println("Status: " + (isPaid ? "Paid" : "Pending"));
+        }
+    }
+    
+    
+    
+    
+    
+    public Hotel_Reservation_System() {
+        inventory = new ArrayList<>();
+        bookings = new ArrayList<>();
+        scanner = new Scanner(System.in);
+        taxRate = 0.12; // 12% tax
+        
+        initializeRooms();
+    }
+    
+    
+    
+    
+    private void initializeRooms() {
+        // Standard Rooms
+        String[] standardAmenities = {"TV", "WiFi", "Air Conditioning"};
+        inventory.add(new HotelRoom("101", "Standard", 99.99, standardAmenities));
+        inventory.add(new HotelRoom("102", "Standard", 99.99, standardAmenities));
+        
+        // Deluxe Rooms
+        String[] deluxeAmenities = {"TV", "WiFi", "Air Conditioning", "Mini Bar", "City View"};
+        inventory.add(new HotelRoom("201", "Deluxe", 159.99, deluxeAmenities));
+        inventory.add(new HotelRoom("202", "Deluxe", 159.99, deluxeAmenities));
+        
+        // Suite
+        String[] suiteAmenities = {"TV", "WiFi", "Air Conditioning", "Mini Bar", "Ocean View", "Living Room", "Kitchen"};
+        inventory.add(new HotelRoom("301", "Suite", 299.99, suiteAmenities));
+    }
+    
+    
+    
+    
+    private void displayAvailableRooms() {
+        System.out.println("\nAvailable Rooms:");
+        System.out.println("---------------");
+        
+        for (HotelRoom room : inventory) {
+            if (room.isAvailable) {
+                System.out.printf("Room %s - %s%n", room.roomNumber, room.category);
+                System.out.printf("Rate: $%.2f per night%n", room.baseRate);
+                System.out.println("Amenities: " + String.join(", ", room.amenities));
+                System.out.println();
+            }
+        }
+    }
+    
+    
+    
+    
+    
+    private void makeReservation() {
+        System.out.println("\nMake a New Reservation");
+        System.out.println("---------------------");
+        
+        // Get guest information
+        System.out.print("Enter guest name: ");
+        scanner.nextLine(); // Clear buffer
+        String guestName = scanner.nextLine();
+        
+        // Displaying available rooms
+        displayAvailableRooms();
+        
+        // Getting room selection
+        System.out.print("Enter desired room number: ");
+        String roomNumber = scanner.next();
+        
+        // Finding selected room
+        HotelRoom selectedRoom = null;
+        for (HotelRoom room : inventory) {
+            if (room.roomNumber.equals(roomNumber) && room.isAvailable) {
+                selectedRoom = room;
+                break;
+            }
+        }
+        
+        if (selectedRoom == null) {
+            System.out.println("Invalid room selection or room not available!");
+            return;
+        }
+        
+        // Getting dates
+        try {
+            System.out.print("Enter check-in date (YYYY-MM-DD): ");
+            LocalDate checkIn = LocalDate.parse(scanner.next());
+            
+            System.out.print("Enter check-out date (YYYY-MM-DD): ");
+            LocalDate checkOut = LocalDate.parse(scanner.next());
+            
+            if (checkIn.isAfter(checkOut) || checkIn.isBefore(LocalDate.now())) {
+                System.out.println("Invalid dates selected!");
+                return;
+            }
+            
+            // Creating reservation
+            Reservation reservation = new Reservation(guestName, selectedRoom, checkIn, checkOut);
+            
+            // Processing payment
+            System.out.printf("Total cost including %.0f%% tax: $%.2f%n", taxRate * 100, reservation.totalCost);
+            System.out.print("Proceed with payment? (y/n): ");
+            if (scanner.next().toLowerCase().charAt(0) == 'y') {
+                processPayment(reservation);
+            } else {
+                System.out.println("Reservation cancelled.");
+                return;
+            }
+            
+            // Finalising booking
+            selectedRoom.isAvailable = false;
+            bookings.add(reservation);
+            
+            System.out.println("\nReservation confirmed!");
+            reservation.displayReservation();
+            
+        } catch (Exception e) {
+            System.out.println("Error processing dates. Please use YYYY-MM-DD format.");
+        }
+    }
+    
+    
+    
+    
+    
+    private void processPayment(Reservation reservation) {
+        // Simulating payment processing
+        System.out.println("Processing payment...");
+        try {
+            Thread.sleep(1500); // Simulating processing time
+            reservation.isPaid = true;
+            System.out.println("Payment successful!");
+        } catch (InterruptedException e) {
+            System.out.println("Payment processing error!");
+        }
+    }
+    
+    
+    
+    
+    
+    private void viewBookings() {
+        if (bookings.isEmpty()) {
+            System.out.println("\nNo current bookings found.");
+            return;
+        }
+        
+        System.out.println("\nCurrent Bookings");
+        System.out.println("----------------");
+        for (Reservation booking : bookings) {
+            booking.displayReservation();
+        }
+    }
+    
+    
+    
+    
+    
+    public void start() {
+        while (true) {
+            System.out.println("\nHotel Reservation System");
+            System.out.println("======================");
+            System.out.println("1. View Available Rooms");
+            System.out.println("2. Make Reservation");
+            System.out.println("3. View All Bookings");
+            System.out.println("4. Exit");
+            System.out.print("\nSelect an option: ");
+            
+            int choice = scanner.nextInt();
+            
+            switch (choice) {
+                case 1:
+                    displayAvailableRooms();
+                    break;
+                case 2:
+                    makeReservation();
+                    break;
+                case 3:
+                    viewBookings();
+                    break;
+                case 4:
+                    System.out.println("Thank you for using our system!");
+                    scanner.close();
+                    return;
+                default:
+                    System.out.println("Invalid option!");
+            }
+        }
+    }
+    
+    
+    
+    
+    
+    public static void main(String[] args) {
+    	Hotel_Reservation_System hotel = new Hotel_Reservation_System();
+        hotel.start();
+    }
+}
